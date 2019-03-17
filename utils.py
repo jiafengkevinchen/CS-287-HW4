@@ -118,7 +118,8 @@ def kaggle_loss(model, batch, cuda=True):
 def count_parameters(model):
     total = 0
     for p in model.parameters():
-        total += p.numel()
+        if p.requires_grad:
+            total += p.numel()
     return total
 
 
