@@ -48,8 +48,8 @@ class VanillaDecompAttn(nnn.Module):
         premise_embed = embed_proj(embed(premise)).rename('seqlen', 'premseqlen')
         hypothesis_embed = embed_proj(embed(hypothesis)).rename('seqlen', 'hypseqlen')
 
-        premise_keys = ntorch.relu(attn_w(premise_embed))
-        hypothesis_keys = ntorch.relu(attn_w(hypothesis_embed))
+        premise_keys = attn_w(premise_embed)
+        hypothesis_keys = attn_w(hypothesis_embed)
 
         log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
 
@@ -60,8 +60,8 @@ class VanillaDecompAttn(nnn.Module):
         hypothesis_concat = ntorch.cat([hypothesis_embed, hypothesis_attns], 'embedding')
 
         result_vec = ntorch.cat([
-            ntorch.relu(match_w(premise_concat)).sum('premseqlen'),
-            ntorch.relu(match_w(hypothesis_concat)).sum('hypseqlen')],
+            match_w(premise_concat).sum('premseqlen'),
+            match_w(hypothesis_concat).sum('hypseqlen')],
             'matchembedding')
 
         return classifier_w(result_vec)
