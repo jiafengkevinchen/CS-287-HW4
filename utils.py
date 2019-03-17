@@ -1,16 +1,18 @@
 import os
 import subprocess
 import base64
-import torch
 import subprocess
 import pandas as pd
 import numpy as np
 
+import torch
+
+from torch import Tensor
+from namedtensor import ntorch, NamedTensor
+from namedtensor.nn import nn as nnn
 
 from IPython.paths import get_ipython_dir
 from urllib.request import urlretrieve
-from namedtensor import ntorch, NamedTensor
-from torch import Tensor
 from tqdm import tqdm_notebook as tqdm
 
 
@@ -167,3 +169,8 @@ def flatten(x, dim_kill, dim_grow):
 
 def unsqueeze(x, dim):
     return ntorch.stack([x], dim)
+
+ce_loss = nnn.CrossEntropyLoss().spec('classes')
+
+def snli_loss(model, batch):
+    return ce_loss(model(batch.hypothesis, batch.premise), batch.label)
