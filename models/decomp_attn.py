@@ -14,13 +14,22 @@ class FeedFwd(nnn.Module):
         x = self.drop(ntorch.relu(self.w2(x)))
         return self.w3(x)
 
-class VanillaDecompAttn(nnn.Module):
-    def __init__(self, TEXT, LABEL, embed_dim=200, comp_dim=100):
+class DecompAttn(nnn.Module):
+    def __init__(
+            self,
+            TEXT,
+            LABEL,
+            embed_dim=200,
+            comp_dim=100,
+            has_distance,
+            max_distance=10):
         super().__init__()
         
         padding_idx = TEXT.vocab.stoi['<pad>']
         original_embed_dim = TEXT.vocab.vectors.size('embedding')
         num_classes = len(LABEL.vocab)
+        self.has_distance = has_distance
+        self.max_distance = max_distance
 
         # this doesn't get updated
         self.embed = nnn.Embedding(TEXT.vocab.vectors.size('word'), embed_dim, 
@@ -31,15 +40,13 @@ class VanillaDecompAttn(nnn.Module):
         self.embed_proj = nnn.Linear(original_embed_dim, embed_dim) \
             .spec('embedding', 'embedding')
 
-        # F, G, H respectively in the literature
-        #attn_w = nnn.Linear(embed_dim, embed_dim).spec('embedding', 'attnembedding')
-        #match_w = nnn.Linear(embed_dim * 2, comp_dim).spec('embedding', 'matchembedding')
-        #classifier_w = nnn.Linear(2 * comp_dim, num_classes).spec('matchembedding', 'classes')
-
         self.attn_w = FeedFwd(embed_dim, embed_dim, 'embedding', 'attnembedding')
         self.match_w = FeedFwd(embed_dim * 2, comp_dim, 'embedding', 'matchembedding')
         self.classifier_w = FeedFwd(2 * comp_dim, num_classes, 
                                   'matchembedding', 'classes', dropout_p=0)
+
+        if has_distance:
+            distance_embed = nnn.Embedding(num_embeddings=max_distance+1, embedding_dim=1)
     
     def forward(self, hypothesis, premise):
         embed, embed_proj, attn_w, match_w, classifier_w = (
@@ -52,6 +59,13 @@ class VanillaDecompAttn(nnn.Module):
         hypothesis_keys = attn_w(hypothesis_embed)
 
         log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
+
+        if self.has_distance:
+            distances = (ntorch.arange(hypothesis.size('seqlen'), names='hypseqlen') - 
+                ntorch.arange(premise.size('seqlen'), names='premseqlen')) \
+                .abs().clamp(max=self.max_distance)
+            d_mat = distance_embed(distances)[{'embedding': 0}]
+            log_alignments = log_alignments + d_mat
 
         premise_attns = log_alignments.softmax('hypseqlen').dot('hypseqlen', hypothesis_embed)
         hypothesis_attns = log_alignments.softmax('premseqlen').dot('premseqlen', premise_embed)
