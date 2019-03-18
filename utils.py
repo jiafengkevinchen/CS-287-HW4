@@ -15,7 +15,6 @@ from IPython.paths import get_ipython_dir
 from urllib.request import urlretrieve
 from tqdm import tqdm_notebook as tqdm
 
-
 def train_model(
     model, loss_fn=None, optimizer=None, train_iter=None,
     val_iter=None, num_epochs=5, report_frequency=100, writer=None, callback=None,
