@@ -1,5 +1,4 @@
 import random
-import getpass
 
 import torch
 import torchtext
@@ -9,13 +8,6 @@ from namedtensor import ntorch, NamedTensor
 from namedtensor.text import NamedField
 
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-if getpass.getuser() not in ['franciscorivera', 'jiafengchen', 'yufeng.ling']:
-    from tensorboardcolab import TensorBoardColab
-    from tensorboardX import SummaryWriter
-    tbc = TensorBoardColab()
-    writer = SummaryWriter(log_dir=tbc.get_writer().get_logdir())
-
 
 # Our input $x$
 TEXT = NamedField(names=('seqlen',))
