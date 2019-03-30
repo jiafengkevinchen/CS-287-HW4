@@ -22,7 +22,7 @@ class DecompAttn(nnn.Module):
             TEXT,
             LABEL,
             embed_dim=200,
-            comp_dim=100,
+            comp_dim=200,
             dropout=0.2
 #             max_distance=10
     ):
