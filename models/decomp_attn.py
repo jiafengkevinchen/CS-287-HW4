@@ -115,6 +115,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
             self,
             TEXT,
             LABEL,
+            intra_dropout=.2,
             embed_dim=200,
             max_distance=10,
             **kwargs):
@@ -123,6 +124,10 @@ class DecompAttnWithIntraAttn(DecompAttn):
         self.max_distance = max_distance
         self.distance_embed = nnn.Embedding(num_embeddings=max_distance+1,
                                             embedding_dim=1)
+
+        self.intra_attn_w = FeedFwd(embed_dim, embed_dim,
+            'embedding', 'embedding', dropout_p=intra_dropout)
+        self.intra_attn_norm = LayerNorm()
 
     def process_input(self, sentence, seqlen_dim):
         embedded = super().process_input(sentence, seqlen_dim)
@@ -139,8 +144,11 @@ class DecompAttnWithIntraAttn(DecompAttn):
             .abs().clamp(max=self.max_distance)).to(embedded.values.device)
         d_mat = self.distance_embed(distances)[{'embedding': 0}]
 
+        f_embedded = self.intra_attn_norm(self.intra_attn_w(embedded))
+        f_embedded_other = self.intra_attn_norm(self.intra_attn_norm(other_embedded))
+
         log_alignments = (
-            embedded.dot("embedding", other_embedded)
+            f_embedded.dot("embedding", f_embedded_other)
             + d_mat + (1-embedded_mask) * (-1e3))
 
         embedded_attns = log_alignments.softmax(
