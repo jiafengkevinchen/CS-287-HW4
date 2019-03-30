@@ -69,7 +69,12 @@ class DecompAttn(nnn.Module):
         # Attend
         premise_keys = attn_norm(attn_w(premise_embed))
         hypothesis_keys = attn_norm(attn_w(hypothesis_embed))
-        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys) / (self.embed_dim ** .5)
+        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
+
+        # Normalizing the log_alignment so that gradients make sense
+        log_alignments = (log_alignments
+            - log_alignments.mean("premseqlen")
+            - log_alignments.mean("hypseqlen")) / (self.embed_dim ** .5)
         premise_attns = log_alignments.softmax('hypseqlen').dot('hypseqlen', hypothesis_embed)
         hypothesis_attns = log_alignments.softmax('premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat([premise_embed, premise_attns], 'embedding')
