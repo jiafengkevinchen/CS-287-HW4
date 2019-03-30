@@ -74,7 +74,8 @@ class DecompAttn(nnn.Module):
         # Normalizing the log_alignment so that gradients make sense
         log_alignments = (log_alignments
             - log_alignments.mean("premseqlen")
-            - log_alignments.mean("hypseqlen")) / (self.embed_dim ** .5)
+            - log_alignments.mean("hypseqlen"))
+
         premise_attns = log_alignments.softmax('hypseqlen').dot('hypseqlen', hypothesis_embed)
         hypothesis_attns = log_alignments.softmax('premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat([premise_embed, premise_attns], 'embedding')
