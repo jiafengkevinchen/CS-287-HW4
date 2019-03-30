@@ -21,11 +21,11 @@ def train_model(
     inner_callback=None, progress_bar=False, patience=1, run_name="model"):
     """
     TODO
-    """
+    # """
 
-    if hasattr(model, '__train__'):
-        model.__train__()
-    elif loss_fn is None or optimizer is None:
+    # if hasattr(model, '__train__'):
+    #     model.__train__()
+    if loss_fn is None or optimizer is None:
         raise ValueError
     else:
         num_batches = 0
@@ -45,11 +45,16 @@ def train_model(
                     optimizer.zero_grad()
                     loss = loss_fn(model, batch)
                     loss.backward()
+
+
+
                     optimizer.step()
                     train_loss += loss.item()
 
                     if inner_callback is not None:
                         inner_callback(**locals())
+
+
 
 
                     num_batches += 1
