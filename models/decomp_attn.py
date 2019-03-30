@@ -1,5 +1,6 @@
 from namedtensor import ntorch
 from namedtensor.nn import nn as nnn
+from layernorm import LayerNorm
 
 class FeedFwd(nnn.Module):
     def __init__(self, d_in, d_out, name_in, name_out, dropout_p=.2, hidden_n=200):
@@ -46,11 +47,12 @@ class DecompAttn(nnn.Module):
             .spec('embedding', 'embedding')
 
         self.attn_w = FeedFwd(embed_dim, embed_dim, 'embedding', 'attnembedding', dropout_p=dropout)
-        # self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
+        self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
 
         self.match_w = FeedFwd(embed_dim * 2, comp_dim, 'embedding', 'matchembedding', dropout_p=dropout)
         self.classifier_w = FeedFwd(2 * comp_dim, num_classes,
                                   'matchembedding', 'classes', dropout_p=0)
+
 
 #         if has_distance:
 #             self.distance_embed = nnn.Embedding(num_embeddings=max_distance+1, embedding_dim=1)
@@ -77,7 +79,14 @@ class DecompAttn(nnn.Module):
         # Attend
         premise_keys = (attn_w(premise_embed))
         hypothesis_keys = (attn_w(hypothesis_embed))
-        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys) + log_mask
+
+        # Layernorm
+        premise_keys = self.attn_norm(premise_keys)
+        hypothesis_keys = self.attn_norm(hypothesis_keys)
+
+        log_alignments = (
+            ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
+            / (self.embed_dim ** .5) + log_mask)
 
         # # Normalizing the log_alignment so that gradients make sense
         # log_alignments = (log_alignments
