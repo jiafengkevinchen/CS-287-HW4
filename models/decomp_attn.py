@@ -58,7 +58,7 @@ class DecompAttn(nnn.Module):
     def forward(self, hypothesis, premise):
         embed, embed_proj, attn_w, match_w, classifier_w, attn_norm = (
             self.embed, self.embed_proj, self.attn_w, self.match_w,
-            self.classifier_w, self.attn_norm)
+            self.classifier_w)
 #         if has_distance:
 #             distance_embed = self.distance_embed
 
