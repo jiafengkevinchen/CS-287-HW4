@@ -1,6 +1,7 @@
 
 from namedtensor import ntorch
 from namedtensor.nn import nn as nnn
+from layernorm import LayerNorm
 
 class FeedFwd(nnn.Module):
     def __init__(self, d_in, d_out, name_in, name_out, dropout_p=.2, hidden_n=200):
@@ -43,6 +44,8 @@ class DecompAttn(nnn.Module):
             .spec('embedding', 'embedding')
 
         self.attn_w = FeedFwd(embed_dim, embed_dim, 'embedding', 'attnembedding')
+        self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
+
         self.match_w = FeedFwd(embed_dim * 2, comp_dim, 'embedding', 'matchembedding')
         self.classifier_w = FeedFwd(2 * comp_dim, num_classes,
                                   'matchembedding', 'classes', dropout_p=0)
@@ -51,8 +54,9 @@ class DecompAttn(nnn.Module):
 #             self.distance_embed = nnn.Embedding(num_embeddings=max_distance+1, embedding_dim=1)
 
     def forward(self, hypothesis, premise):
-        embed, embed_proj, attn_w, match_w, classifier_w = (
-            self.embed, self.embed_proj, self.attn_w, self.match_w, self.classifier_w)
+        embed, embed_proj, attn_w, match_w, classifier_w, attn_norm = (
+            self.embed, self.embed_proj, self.attn_w, self.match_w,
+            self.classifier_w, self.attn_norm)
 #         if has_distance:
 #             distance_embed = self.distance_embed
 
@@ -61,8 +65,8 @@ class DecompAttn(nnn.Module):
         hypothesis_embed = embed_proj(embed(hypothesis)).rename('seqlen', 'hypseqlen')
 
         # Attend
-        premise_keys = attn_w(premise_embed)
-        hypothesis_keys = attn_w(hypothesis_embed)
+        premise_keys = attn_norm(attn_w(premise_embed))
+        hypothesis_keys = attn_norm(attn_w(hypothesis_embed))
         log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
         premise_attns = log_alignments.softmax('hypseqlen').dot('hypseqlen', hypothesis_embed)
         hypothesis_attns = log_alignments.softmax('premseqlen').dot('premseqlen', premise_embed)

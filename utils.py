@@ -46,11 +46,16 @@ def train_model(
                     optimizer.zero_grad()
                     loss = loss_fn(model, batch)
                     loss.backward()
+
+
+
                     optimizer.step()
                     train_loss += loss.item()
 
                     if inner_callback is not None:
                         inner_callback(**locals())
+
+
 
 
                     num_batches += 1
