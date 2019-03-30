@@ -1,7 +1,5 @@
-
 from namedtensor import ntorch
 from namedtensor.nn import nn as nnn
-from layernorm import LayerNorm
 
 class FeedFwd(nnn.Module):
     def __init__(self, d_in, d_out, name_in, name_out, dropout_p=.2, hidden_n=200):
@@ -55,7 +53,7 @@ class DecompAttn(nnn.Module):
 #         if has_distance:
 #             self.distance_embed = nnn.Embedding(num_embeddings=max_distance+1, embedding_dim=1)
 
-    def forward(self, hypothesis, premise):
+    def forward(self, hypothesis, premise, debug=False):
         embed, embed_proj, attn_w, match_w, classifier_w = (
             self.embed, self.embed_proj, self.attn_w, self.match_w,
             self.classifier_w)
@@ -106,6 +104,8 @@ class DecompAttn(nnn.Module):
         #     match_w(premise_concat).sum('premseqlen'),
         #     match_w(hypothesis_concat).sum('hypseqlen')],
         #     'matchembedding')
-
+        if debug:
+            return classifier_w(result_vec), log_alignments
         return classifier_w(result_vec)
+
 
