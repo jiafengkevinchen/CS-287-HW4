@@ -125,7 +125,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
                                             embedding_dim=1)
 
     def process_input(self, sentence, seqlen_dim):
-        embedded = self.super().process_input(sentence)
+        embedded = super().process_input(sentence)
         other_dim = seqlen_dim + "2"
         other_embedded = embedded.rename(seqlen_dim, other_dim)
 
