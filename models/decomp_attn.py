@@ -64,6 +64,11 @@ class DecompAttn(nnn.Module):
         premise = premise.rename('seqlen', 'premseqlen')
         hypothesis = hypothesis.rename('seqlen', 'hypseqlen')
 
+        premise_mask = (premise != self.padding_idx).float()
+        hypothesis_mask = (hypothesis != self.padding_idx).float()
+
+        log_mask = (1 - premise_mask * hypothesis_mask) * (-1e3)
+
 
         # Embedding the premise and the hypothesis
         premise_embed = embed_proj(embed(premise))
@@ -72,7 +77,7 @@ class DecompAttn(nnn.Module):
         # Attend
         premise_keys = (attn_w(premise_embed))
         hypothesis_keys = (attn_w(hypothesis_embed))
-        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
+        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys) + log_mask
 
         # # Normalizing the log_alignment so that gradients make sense
         # log_alignments = (log_alignments
@@ -86,8 +91,6 @@ class DecompAttn(nnn.Module):
 
 
         # Compare
-        premise_mask = (premise != self.padding_idx).float()
-        hypothesis_mask = (hypothesis != self.padding_idx).float()
         compare_premise = premise_mask * match_w(premise_concat)
         compare_hypothesis = hypothesis_mask * match_w(hypothesis_concat)
 
