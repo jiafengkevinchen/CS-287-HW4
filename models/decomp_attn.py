@@ -34,6 +34,8 @@ class DecompAttn(nnn.Module):
 #         self.has_distance = has_distance
 #         self.max_distance = max_distance
 
+        self.embed_dim = embed_dim
+
         # this doesn't get updated
         self.embed = nnn.Embedding(TEXT.vocab.vectors.size('word'), embed_dim,
                       padding_idx=padding_idx) \
@@ -67,7 +69,7 @@ class DecompAttn(nnn.Module):
         # Attend
         premise_keys = attn_norm(attn_w(premise_embed))
         hypothesis_keys = attn_norm(attn_w(hypothesis_embed))
-        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
+        log_alignments = ntorch.dot('attnembedding', premise_keys, hypothesis_keys) / (self.embed_dim ** .5)
         premise_attns = log_alignments.softmax('hypseqlen').dot('hypseqlen', hypothesis_embed)
         hypothesis_attns = log_alignments.softmax('premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat([premise_embed, premise_attns], 'embedding')
