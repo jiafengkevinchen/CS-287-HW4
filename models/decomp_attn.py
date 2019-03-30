@@ -12,8 +12,8 @@ class FeedFwd(nnn.Module):
         self.drop = nnn.Dropout(p=dropout_p)
 
     def forward(self, x):
-        x = self.drop(ntorch.relu(self.w1(x)))
-        x = self.drop(ntorch.relu(self.w2(x)))
+        x = self.drop(ntorch.tanh(self.w1(x)))
+        x = self.drop(ntorch.tanh(self.w2(x)))
         return self.w3(x)
 
 
