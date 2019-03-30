@@ -136,7 +136,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
         distances = (
             (ntorch.arange(embedded.size(seqlen_dim), names=seqlen_dim) -
              ntorch.arange(embedded.size(seqlen_dim), names=other_dim))
-            .abs().clamp(max=self.max_distance))
+            .abs().clamp(max=self.max_distance)).to(embedded.values.device)
         d_mat = self.distance_embed(distances)[{'embedding': 0}]
 
         log_alignments = (
