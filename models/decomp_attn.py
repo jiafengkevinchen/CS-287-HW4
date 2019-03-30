@@ -22,11 +22,13 @@ class DecompAttn(nnn.Module):
             LABEL,
             embed_dim=200,
             comp_dim=100,
+            dropout=0.2
 #             max_distance=10
     ):
         super().__init__()
 
         padding_idx = TEXT.vocab.stoi['<pad>']
+        self.padding_idx = padding_idx
         original_embed_dim = TEXT.vocab.vectors.size('embedding')
         num_classes = len(LABEL.vocab)
 #         self.has_distance = has_distance
@@ -43,10 +45,10 @@ class DecompAttn(nnn.Module):
         self.embed_proj = nnn.Linear(original_embed_dim, embed_dim) \
             .spec('embedding', 'embedding')
 
-        self.attn_w = FeedFwd(embed_dim, embed_dim, 'embedding', 'attnembedding')
+        self.attn_w = FeedFwd(embed_dim, embed_dim, 'embedding', 'attnembedding', dropout_p=dropout)
         # self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
 
-        self.match_w = FeedFwd(embed_dim * 2, comp_dim, 'embedding', 'matchembedding')
+        self.match_w = FeedFwd(embed_dim * 2, comp_dim, 'embedding', 'matchembedding', dropout_p=dropout)
         self.classifier_w = FeedFwd(2 * comp_dim, num_classes,
                                   'matchembedding', 'classes', dropout_p=0)
 
@@ -59,10 +61,13 @@ class DecompAttn(nnn.Module):
             self.classifier_w)
 #         if has_distance:
 #             distance_embed = self.distance_embed
+        premise = premise.rename('seqlen', 'premseqlen')
+        hypothesis = hypothesis.rename('seqlen', 'hypseqlen')
+
 
         # Embedding the premise and the hypothesis
-        premise_embed = embed_proj(embed(premise)).rename('seqlen', 'premseqlen')
-        hypothesis_embed = embed_proj(embed(hypothesis)).rename('seqlen', 'hypseqlen')
+        premise_embed = embed_proj(embed(premise))
+        hypothesis_embed = embed_proj(embed(hypothesis))
 
         # Attend
         premise_keys = (attn_w(premise_embed))
@@ -81,14 +86,19 @@ class DecompAttn(nnn.Module):
 
 
         # Compare
-        compare_premise = match_w(premise_concat)
-        compare_hypothesis = match_w(hypothesis_concat)
+        premise_mask = (premise != self.padding_idx).float()
+        hypothesis_mask = (hypothesis != self.padding_idx).float()
+        compare_premise = premise_mask * match_w(premise_concat)
+        compare_hypothesis = hypothesis_mask * match_w(hypothesis_concat)
+
 
         # Aggregate
         result_vec = ntorch.cat([
             compare_premise.sum('premseqlen'),
             compare_hypothesis.sum('hypseqlen')],
             'matchembedding')
+
+
 
         # if self.has_distance:
         #     distances = (ntorch.arange(hypothesis.size('seqlen'), names='hypseqlen') -
