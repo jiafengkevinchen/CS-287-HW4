@@ -115,10 +115,10 @@ class DecompAttnWithIntraAttn(DecompAttn):
             self,
             TEXT,
             LABEL,
-            embed_dim,
+            embed_dim=200,
             max_distance=10,
             **kwargs):
-        self.super().__init__(TEXT, LABEL, embed_dim=embed_dim,
+        super(DecompAttnWithIntraAttn).__init__(TEXT, LABEL, embed_dim=embed_dim,
                               input_dim=2 * embed_dim, **kwargs)
         self.max_distance = max_distance
         self.distance_embed = nnn.Embedding(num_embeddings=max_distance+1,
