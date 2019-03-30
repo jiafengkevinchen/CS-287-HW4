@@ -127,7 +127,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
 
         self.intra_attn_w = FeedFwd(embed_dim, embed_dim,
             'embedding', 'embedding', dropout_p=intra_dropout)
-        self.intra_attn_norm = LayerNorm()
+        self.intra_attn_norm = LayerNorm(embed_dim, 'embedding')
 
     def process_input(self, sentence, seqlen_dim):
         embedded = super().process_input(sentence, seqlen_dim)
