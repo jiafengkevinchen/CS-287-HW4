@@ -51,7 +51,7 @@ class DecompAttn(nnn.Module):
                               'embedding', 'attnembedding', dropout_p=dropout)
         self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
 
-        self.match_w = FeedFwd(embed_dim * 2, embed_dim,
+        self.match_w = FeedFwd(input_dim * 2, embed_dim,
                                'embedding', 'matchembedding', dropout_p=dropout)
         self.classifier_w = FeedFwd(embed_dim * 2, num_classes,
                                     'matchembedding', 'classes', dropout_p=0)
