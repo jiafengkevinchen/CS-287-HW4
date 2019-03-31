@@ -25,6 +25,7 @@ class DecompAttn(nnn.Module):
             LABEL,
             embed_dim=200,
             input_dim=None,
+            layernorm=False,
             dropout=0.2):
         super().__init__()
 
@@ -49,7 +50,9 @@ class DecompAttn(nnn.Module):
 
         self.attn_w = FeedFwd(input_dim, embed_dim,
                               'embedding', 'attnembedding', dropout_p=dropout)
-        self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
+        self.layernorm = layernorm
+        if layernorm:
+            self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
 
         self.match_w = FeedFwd(input_dim * 2, embed_dim,
                                'embedding', 'matchembedding', dropout_p=dropout)
@@ -78,12 +81,13 @@ class DecompAttn(nnn.Module):
         premise_keys = (attn_w(premise_embed))
         hypothesis_keys = (attn_w(hypothesis_embed))
 
-        # Layernorm
-        premise_keys = self.attn_norm(premise_keys)
-        hypothesis_keys = self.attn_norm(hypothesis_keys)
+        if self.layernorm:
+            premise_keys = self.attn_norm(premise_keys)
+            hypothesis_keys = self.attn_norm(hypothesis_keys)
 
         log_alignments = (
-            ntorch.dot('attnembedding', premise_keys, hypothesis_keys) + log_mask)
+            ntorch.dot('attnembedding', premise_keys, hypothesis_keys) / (self.embed_dim ** .5)
+             + log_mask)
 
         premise_attns = log_alignments.softmax(
             'hypseqlen').dot('hypseqlen', hypothesis_embed)
