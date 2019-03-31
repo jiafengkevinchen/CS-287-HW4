@@ -14,7 +14,7 @@ class FeedFwd(nnn.Module):
 
     def forward(self, x):
         x = self.drop(ntorch.relu(self.w1(x)))
-        x = self.drop(ntorch.relu(self.w2(x)))
+        # x = self.drop(ntorch.relu(self.w2(x)))
         return self.w3(x)
 
 
@@ -91,9 +91,9 @@ class DecompAttn(nnn.Module):
         hypothesis_attns = log_alignments.softmax(
             'premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat(
-            [premise_embed, premise_attns], 'embedding')
+            [premise_embed, premise_mask * premise_attns], 'embedding')
         hypothesis_concat = ntorch.cat(
-            [hypothesis_embed, hypothesis_attns], 'embedding')
+            [hypothesis_embed, hypothesis_mask * hypothesis_attns], 'embedding')
 
         # Compare
         compare_premise = premise_mask * match_w(premise_concat)
