@@ -7,9 +7,9 @@ class FeedFwd(nnn.Module):
     def __init__(self, d_in, d_out, name_in, name_out,
                  dropout_p=.2, hidden_n=200):
         super().__init__()
-        self.w1 = nnn.Linear(d_in, hidden_n).spec(name_in, "hidden1")
-        self.w2 = nnn.Linear(hidden_n, hidden_n).spec("hidden1", "hidden2")
-        self.w3 = nnn.Linear(hidden_n, d_out).spec("hidden2", name_out)
+        self.w1 = nnn.Linear(d_in, hidden_n).spec(name_in, "hidden")
+        self.w2 = nnn.Linear(hidden_n, hidden_n).spec("hidden", "hidden")
+        self.w3 = nnn.Linear(hidden_n, d_out).spec("hidden", name_out)
         self.drop = nnn.Dropout(p=dropout_p)
 
     def forward(self, x):
