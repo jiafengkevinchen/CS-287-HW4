@@ -13,8 +13,8 @@ class FeedFwd(nnn.Module):
         self.drop = nnn.Dropout(p=dropout_p)
 
     def forward(self, x):
-        x = self.drop(ntorch.relu(self.w1(x)))
-        # x = self.drop(ntorch.relu(self.w2(x)))
+        x = ntorch.relu(self.w1(x))
+        x = self.drop(ntorch.relu(self.w2(x)))
         return self.w3(x)
 
 
@@ -100,8 +100,8 @@ class DecompAttn(nnn.Module):
 
         # Aggregate
         result_vec = ntorch.cat([
-            compare_premise.sum('premseqlen'),
-            compare_hypothesis.sum('hypseqlen')],
+            compare_premise.mean('premseqlen'),
+            compare_hypothesis.mean('hypseqlen')],
             'matchembedding')
 
         if debug:
