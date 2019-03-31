@@ -139,9 +139,9 @@ class DecompAttnWithIntraAttn(DecompAttn):
             embedded_mask.rename(seqlen_dim, other_dim)
 
         distances = (
-            (ntorch.arange(embedded.size(seqlen_dim), names=seqlen_dim) -
-             ntorch.arange(embedded.size(seqlen_dim), names=other_dim))
-            .abs().clamp(max=self.max_distance)).to(embedded.values.device)
+            (ntorch.arange(embedded.size(seqlen_dim), names=seqlen_dim, device=embedded.values.device) -
+             ntorch.arange(embedded.size(seqlen_dim), names=other_dim, device=embedded.values.device))
+            .abs().clamp(max=self.max_distance))
         d_mat = self.distance_embed(distances)[{'embedding': 0}]
 
         f_embedded = self.intra_attn_norm(self.intra_attn_w(embedded))
