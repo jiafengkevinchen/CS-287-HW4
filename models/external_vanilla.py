@@ -6,6 +6,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+from namedtensor.nn import nn as nnn
+
 # RETRIEVED FROM https://github.com/libowen2121/SNLI-decomposable-attention
 
 
@@ -150,3 +152,28 @@ class atten(nn.Module):
         log_prob = self.log_prob(h)
 
         return log_prob
+
+class ExternalWrapper(nnn.Module):
+    """
+    Wrap for NamedTensor.
+    """
+    def __init__(self, TEXT, LABEL):
+        super().__init__()
+        self.input_encoder = encoder(TEXT.vocab.vectors.size('word'), 
+                                300, 
+                                300, 
+                                0.01)
+        self.input_encoder.embedding.weight.data.copy_(TEXT.vocab.vectors.values)
+        self.input_encoder.embedding.weight.requires_grad = False
+
+        self.inter_atten = atten(300, 4, 0.01)
+
+
+   
+    def forward(self, hypothesis, premise):
+        hyp, prem = self.input_encoder(hypothesis.values.transpose(0,1), 
+                                       premise.values.transpose(0,1))
+        
+       
+        result = self.inter_atten(hyp, prem)
+        return NamedTensor(result, names=('batch', 'classes'))
