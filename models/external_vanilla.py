@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 
 from namedtensor.nn import nn as nnn
+from namedtensor import NamedTensor
 
 # RETRIEVED FROM https://github.com/libowen2121/SNLI-decomposable-attention
 
