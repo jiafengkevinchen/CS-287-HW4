@@ -144,7 +144,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
         other_dim = seqlen_dim + "2"
         other_embedded = embedded.rename(seqlen_dim, other_dim)
 
-        embedded_mask = (embedded != self.padding_idx).float()
+        embedded_mask = (sentence != self.padding_idx).float()
         embedded_mask = embedded_mask * \
             embedded_mask.rename(seqlen_dim, other_dim)
 
