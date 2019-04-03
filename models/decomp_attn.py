@@ -23,7 +23,7 @@ class DecompAttn(nnn.Module):
             self,
             TEXT,
             LABEL,
-            embed_dim=300,
+            embed_dim=200,
             input_dim=None,
             layernorm=False,
             dropout=0.2):
@@ -31,7 +31,7 @@ class DecompAttn(nnn.Module):
 
         padding_idx = TEXT.vocab.stoi['<pad>']
         self.padding_idx = padding_idx
-        # original_embed_dim = TEXT.vocab.vectors.size('embedding')
+        original_embed_dim = TEXT.vocab.vectors.size('embedding')
         num_classes = len(LABEL.vocab)
 
         self.embed_dim = embed_dim
@@ -41,11 +41,11 @@ class DecompAttn(nnn.Module):
                                    padding_idx=padding_idx) \
             .from_pretrained(TEXT.vocab.vectors.values)
 
-        self.embed.weight.requires_grad = True
+        # self.embed.weight.requires_grad = True
 
-        # # project the unchanged embedding into something smaller
-        # self.embed_proj = nnn.Linear(original_embed_dim, embed_dim) \
-        #     .spec('embedding', 'embedding') ## BIAS??
+        # project the unchanged embedding into something smaller
+        self.embed_proj = nnn.Linear(original_embed_dim, embed_dim, bias=False) \
+            .spec('embedding', 'embedding')
 
         if input_dim is None:
             input_dim = embed_dim
@@ -62,8 +62,8 @@ class DecompAttn(nnn.Module):
                                     'matchembedding', 'classes', dropout_p=0)
 
     def process_input(self, sentence, seqlen_dim):
-        # return self.embed_proj(self.embed(sentence))
-        return self.embed(sentence)
+        return self.embed_proj(self.embed(sentence))
+        # return self.embed(sentence)
 
     def forward(self, hypothesis, premise, debug=False):
         attn_w, match_w, classifier_w = (
