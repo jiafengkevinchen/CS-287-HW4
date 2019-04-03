@@ -9,13 +9,13 @@ class FeedFwd(nnn.Module):
         super().__init__()
         self.w1 = nnn.Linear(d_in, hidden_n).spec(name_in, "hidden")
         self.w2 = nnn.Linear(hidden_n, hidden_n).spec("hidden", "hidden")
-        self.w3 = nnn.Linear(hidden_n, d_out).spec("hidden", name_out)
+        # self.w3 = nnn.Linear(hidden_n, d_out).spec("hidden", name_out)
         self.drop = nnn.Dropout(p=dropout_p)
 
     def forward(self, x):
         x = ntorch.relu(self.w1(x))
         x = self.drop(ntorch.relu(self.w2(x)))
-        return self.w3(x)
+        return x
 
 
 class DecompAttn(nnn.Module):
@@ -23,7 +23,7 @@ class DecompAttn(nnn.Module):
             self,
             TEXT,
             LABEL,
-            embed_dim=200,
+            embed_dim=300,
             input_dim=None,
             layernorm=False,
             dropout=0.2):
@@ -31,7 +31,7 @@ class DecompAttn(nnn.Module):
 
         padding_idx = TEXT.vocab.stoi['<pad>']
         self.padding_idx = padding_idx
-        original_embed_dim = TEXT.vocab.vectors.size('embedding')
+        # original_embed_dim = TEXT.vocab.vectors.size('embedding')
         num_classes = len(LABEL.vocab)
 
         self.embed_dim = embed_dim
@@ -41,9 +41,11 @@ class DecompAttn(nnn.Module):
                                    padding_idx=padding_idx) \
             .from_pretrained(TEXT.vocab.vectors.values)
 
-        # project the unchanged embedding into something smaller
-        self.embed_proj = nnn.Linear(original_embed_dim, embed_dim) \
-            .spec('embedding', 'embedding')
+        self.embed.weight.requires_grad = True
+
+        # # project the unchanged embedding into something smaller
+        # self.embed_proj = nnn.Linear(original_embed_dim, embed_dim) \
+        #     .spec('embedding', 'embedding') ## BIAS??
 
         if input_dim is None:
             input_dim = embed_dim
@@ -60,7 +62,8 @@ class DecompAttn(nnn.Module):
                                     'matchembedding', 'classes', dropout_p=0)
 
     def process_input(self, sentence, seqlen_dim):
-        return self.embed_proj(self.embed(sentence))
+        # return self.embed_proj(self.embed(sentence))
+        return self.embed(sentence)
 
     def forward(self, hypothesis, premise, debug=False):
         attn_w, match_w, classifier_w = (
@@ -89,10 +92,10 @@ class DecompAttn(nnn.Module):
             ntorch.dot('attnembedding', premise_keys, hypothesis_keys) / (self.embed_dim ** .5)
              + log_mask)
 
-        premise_attns = (log_alignments / (log_alignments.std("hypseqlen") + 0.1)).softmax(
-            'hypseqlen').dot('hypseqlen', hypothesis_embed)
-        hypothesis_attns = (log_alignments / (log_alignments.std("premseqlen") + 0.1)).softmax(
-            'premseqlen').dot('premseqlen', premise_embed)
+        # premise_attns = (log_alignments / (log_alignments.std("hypseqlen") + 0.1)).softmax(
+        #     'hypseqlen').dot('hypseqlen', hypothesis_embed)
+        # hypothesis_attns = (log_alignments / (log_alignments.std("premseqlen") + 0.1)).softmax(
+        #     'premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat(
             [premise_embed, premise_mask * premise_attns], 'embedding')
         hypothesis_concat = ntorch.cat(
@@ -104,8 +107,8 @@ class DecompAttn(nnn.Module):
 
         # Aggregate
         result_vec = ntorch.cat([
-            compare_premise.mean('premseqlen'),
-            compare_hypothesis.mean('hypseqlen')],
+            compare_premise.sum('premseqlen'),
+            compare_hypothesis.sum('hypseqlen')],
             'matchembedding')
 
         if debug:
