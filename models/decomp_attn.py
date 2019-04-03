@@ -155,7 +155,7 @@ class DecompAttnWithIntraAttn(DecompAttn):
         d_mat = self.distance_embed(distances)[{'embedding': 0}]
 
         f_embedded = self.intra_attn_w(embedded)
-        f_embedded_other = self.intra_attn_w(other_embedded)
+        f_embedded_other = f_embedded.rename(seqlen_dim, other_dim)
 
         # f_embedded = self.intra_attn_norm(self.intra_attn_w(embedded))
         # f_embedded_other = self.intra_attn_norm(self.intra_attn_norm(other_embedded))
