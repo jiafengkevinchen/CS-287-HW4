@@ -1,7 +1,5 @@
 from namedtensor import ntorch
 from namedtensor.nn import nn as nnn
-from layernorm import LayerNorm
-
 
 class FeedFwd(nnn.Module):
     def __init__(self, d_in, d_out, name_in, name_out,
@@ -24,7 +22,6 @@ class DecompAttn(nnn.Module):
             LABEL,
             embed_dim=200,
             input_dim=None,
-            layernorm=False,
             dropout=0.2):
         super().__init__()
 
@@ -51,9 +48,6 @@ class DecompAttn(nnn.Module):
 
         self.attn_w = FeedFwd(input_dim, embed_dim,
                               'embedding', 'attnembedding', dropout_p=dropout)
-        self.layernorm = layernorm
-        if layernorm:
-            self.attn_norm = LayerNorm(embed_dim, 'attnembedding')
 
         self.match_w = FeedFwd(input_dim * 2, embed_dim,
                                'embedding', 'matchembedding', dropout_p=dropout)
@@ -83,21 +77,13 @@ class DecompAttn(nnn.Module):
         premise_keys = (attn_w(premise_embed))
         hypothesis_keys = (attn_w(hypothesis_embed))
 
-        if self.layernorm:
-            premise_keys = self.attn_norm(premise_keys)
-            hypothesis_keys = self.attn_norm(hypothesis_keys)
-
         log_alignments = (
             ntorch.dot('attnembedding', premise_keys, hypothesis_keys)
              + log_mask)
 
-        premise_attns = (log_alignments
-            # / (log_alignments.std("hypseqlen") + 0.1)
-            ).softmax(
+        premise_attns = (log_alignments).softmax(
             'hypseqlen').dot('hypseqlen', hypothesis_embed)
-        hypothesis_attns = (log_alignments
-            # / (log_alignments.std("premseqlen") + 0.1)
-            ).softmax(
+        hypothesis_attns = (log_alignments).softmax(
             'premseqlen').dot('premseqlen', premise_embed)
         premise_concat = ntorch.cat(
             [premise_embed, premise_mask * premise_attns], 'embedding')
@@ -136,7 +122,6 @@ class DecompAttnWithIntraAttn(DecompAttn):
 
         self.intra_attn_w = FeedFwd(embed_dim, embed_dim,
             'embedding', 'embedding', dropout_p=intra_dropout)
-        # self.intra_attn_norm = LayerNorm(embed_dim, 'embedding')
 
     def process_input(self, sentence, seqlen_dim):
         embedded = super().process_input(sentence, seqlen_dim)
@@ -155,9 +140,6 @@ class DecompAttnWithIntraAttn(DecompAttn):
 
         f_embedded = self.intra_attn_w(embedded)
         f_embedded_other = f_embedded.rename(seqlen_dim, other_dim)
-
-        # f_embedded = self.intra_attn_norm(self.intra_attn_w(embedded))
-        # f_embedded_other = self.intra_attn_norm(self.intra_attn_norm(other_embedded))
 
         log_alignments = (
             f_embedded.dot("embedding", f_embedded_other)
