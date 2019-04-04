@@ -11,4 +11,4 @@ class ExactEnsemble(nnn.Module):
             model(hypothesis, premise) for model in self.models
         ], 'model')
         
-        return log_preds.softmax('classes').mean('model')
+        return log_preds.softmax('classes').mean('model').log()
