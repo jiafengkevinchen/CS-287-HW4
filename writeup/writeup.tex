@@ -106,8 +106,8 @@ In the above equation, $d_{i-j} \in \R$ is the bias term based on distance, whic
 \toprule
 model name                   &specifications\\
 \midrule
-\texttt{Seq2Seq} & 100 embedding, 100 hidden, no dropout\\
-\texttt{Seq2SeqAttn} & Bi-directional LSTM, 100 embedding, 100 hidden, no dropout\\
+\texttt{Vanilla} & 100 embedding, 100 hidden, no dropout\\
+\texttt{Intra-Attn} & Bi-directional LSTM, 100 embedding, 100 hidden, no dropout\\
 \bottomrule
 \end{tabular}
     \caption{Both models used only one layer in the decoder and trained with Adam and learning rate $10^{-3}$ over 10 epochs. For \texttt{Seq2Seq}, decrease in validation loss flattened at epoch 8. For \texttt{Seq2SeqAttn}, training stopped at epoch 7 after loss starting going up.}
@@ -117,13 +117,11 @@ model name                   &specifications\\
 \centering
 \begin{tabular}{lrrr}
 \toprule
-{}                                     & Loss  & Perplexity & BLEU \\
+{}                                     & Validation loss & Validation accuracy \\
 model name                             &       &        & \\
 \midrule
-\texttt{Seq2Seq}                      & 3.23 & 25.36  & 6.32 \\
-\texttt{Seq2SeqAttn}                      & 2.71 & 15.05  & 17.77 \\
-\texttt{Megatron} & 2.7 & 15 & 9.68 \\
-\texttt{Soundwave} & 2.8 & 16 & 7.08\\
+\texttt{Vanilla}                      & 0.612  & 74.44\% \\
+\texttt{Intra-Attn}  & 0.745   & 62.06\% \\
 \bottomrule
 \end{tabular}
 \caption{Performance metrics for different models}
