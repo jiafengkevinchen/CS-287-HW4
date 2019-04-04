@@ -4,6 +4,13 @@ from namedtensor import NamedTensor
 from namedtensor import ntorch
 from namedtensor.nn import nn as nnn
 
+def logsumexp(named_tensor, dim_name):
+    names = list(named_tensor.shape.keys())
+    dim_num = names.index(dim_name)
+    names.pop(dim_num)
+    return NamedTensor(torch.logsumexp(named_tensor.values, dim_num, keepdim=False), 
+                names=names)
+
 class VAEEnsemble(nnn.Module):
     def __init__(self, models, q, num_classes=4):
         super().__init__()
