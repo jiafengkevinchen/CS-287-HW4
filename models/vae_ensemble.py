@@ -1,4 +1,5 @@
-from torch.distributions import Categorical
+import torch
+from torch.distributions import Categorical, kl_divergence
 
 from namedtensor import NamedTensor
 from namedtensor import ntorch
@@ -18,6 +19,8 @@ class VAEEnsemble(nnn.Module):
         self.q = q
         self.ce_loss = nnn.CrossEntropyLoss(reduction='none').spec('classes')
         self.num_classes = num_classes
+        self.unif = Categorical(torch.ones(len(models), 
+                                           device=next(self.parameters()).device))
     
     def forward(self, hypothesis, premise, y=None):
         if self.training:
@@ -44,7 +47,8 @@ class VAEEnsemble(nnn.Module):
                 global_log_probs[{'batch': model_batches}] = log_probs
         
             loss = -m.log_prob(models.values) * \
-                self.ce_loss(global_log_probs, y).values
+                self.ce_loss(global_log_probs, y).values + \
+                kl_divergence(m, self.unif).sum()
         
             return loss.sum()
         
@@ -57,4 +61,3 @@ class VAEEnsemble(nnn.Module):
             normalizing_factor = logsumexp(unnorm_preds, 'classes')
             return (unnorm_preds - normalizing_factor)
             #return ntorch.log(log_preds.softmax('classes').mean('model'))
-
