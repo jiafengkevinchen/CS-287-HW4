@@ -149,21 +149,61 @@ model.
 
 \section{Experiments}
 
+\subsection{Set-up and hyper-parameters}
+
+For each of our four models, we train each one on a Google Collab instance until
+the instance times out. This means that we train a variable number of epochs
+depending on each model's epoch training time as well as some variability from
+the instance's longevity.
+
+For the vanilla model, we follow the hyper-parameter recommendations from the
+paper. This means we embed into a 200 dimensions, and use feed-forward neural
+networks with two layers and ReLU activation. We similarly employ dropout with
+probability $0.2$ of dropping out. For the intra-attention variant, we use the
+same hyperparameters and treat all distances bigger than 10 the same.
+
+The ensemble models use the vanilla decomposable attention model. Our exact
+ensemble uses 3 models, while the VAE approximation uses 4. We change these
+numbers because the VAE approximation can handle more models with less of a cost
+on training time. 
+
+\subsection{Results}
+
+The performance of our trained models appears in \cref{table:performance}. These
+numbers merit some discussion. The most successful model is the vanilla. We
+attribute this outperformance to the model's simplicity which allowed it to
+train for more epochs. We trained for a relatively small number of epochs
+relative to those reported in the literature, so we fully expect that if trained
+for longer, the more complex models would outperform.
+
+Between the exact ensemble and the VAE ensemble, there are two interesting
+stylized facts to draw. The first is that the VAE ensemble's speed advantage
+fell short of preliminary expectations because each model had to be evaluated on
+a subset of a batch. Thus, while each training example was only evaluated by one
+model, the batching advantage was reduced. We increased the batch size by a
+factor of two to combat this problem, but GPU memory constraints made it
+unfeasible to increase it further.
+
+The second stylized point is that the VAE model seems to have a higher
+validation accuracy than might be expected from its validation loss (e.g. the
+intra-attention model has a better validation loss, but worse accuracy). We
+attribute this to model specialization. For instance, if for a particular
+example, one model is sure of the correct label, and the other models have no
+predictive power (i.e. return a uniform distribution over labels), the ensemble
+will pick the correct answer but have a moderately high loss because the
+probabilities given by the specialized model will be averaged with uniforms
+given by the other models. 
+
+Our belief in specialization is strengthened by inspection of the inference
+network $q$. We find that the recommendations that $q$ makes for which model to
+can vary moderately from the uniform that we would get under no specialization.
+However, manual inspection of which models get recommended for which sentences
+did not yield any obvious patterns. It is possible that the model is
+specializing in a way that is difficult to articulate, but more work would be
+required to better understand the qualitative aspects of this specialization. 
+
 \begin{landscape}
-\begin{table}[tb]
-    
-    \centering
-\begin{tabular}{ll}
-\toprule
-model name                   &specifications\\
-\midrule
-\texttt{Vanilla} & 100 embedding, 100 hidden, no dropout\\
-\texttt{Intra-Attn} & Bi-directional LSTM, 100 embedding, 100 hidden, no dropout\\
-\bottomrule
-\end{tabular}
-    \caption{Both models used only one layer in the decoder and trained with Adam and learning rate $10^{-3}$ over 10 epochs. For \texttt{Seq2Seq}, decrease in validation loss flattened at epoch 8. For \texttt{Seq2SeqAttn}, training stopped at epoch 7 after loss starting going up.}
-    \label{tab:spec}
-\end{table}
+
 \begin{table}[h]
 \centering
 \begin{tabular}{lrrr}
@@ -174,7 +214,8 @@ model name                             &       &        & \\
 \texttt{Vanilla}                      & 0.612  & 74.44\% \\
 \texttt{Intra-Attn}  & 0.745   & 62.06\% \\
 \texttt{Exact-Ensemble}  & 0.650   & 71.65\% \\
-\texttt{VAE Ensemble} & 0.839 & 60.01\% \\
+% \texttt{VAE Ensemble} & 0.839 & 61.01\% \\ % old results
+\texttt{VAE Ensemble} & 0.783 & 66.01\% \\
 \bottomrule
 \end{tabular}
 \caption{Performance metrics for different models}
