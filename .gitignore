@@ -3,3 +3,8 @@
 .vector_cache/*
 .ipynb_checkpoints/*
 *swp
+*log
+*aux
+*out
+models/__pycache__/*
+models/.ipynb_checkpoints/*
