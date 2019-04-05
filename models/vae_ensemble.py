@@ -47,7 +47,7 @@ class VAEEnsemble(nnn.Module):
                 global_log_probs[{'batch': model_batches}] = log_probs
         
             loss = -m.log_prob(models.values) * \
-                self.ce_loss(global_log_probs, y).values - \
+                self.ce_loss(global_log_probs, y).values + \
                 kl_divergence(m, self.unif).sum()
         
             return loss.sum()
