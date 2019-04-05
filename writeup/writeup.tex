@@ -91,10 +91,61 @@ In the above equation, $d_{i-j} \in \R$ is the bias term based on distance, whic
 
 % subsubsection intra_sentence_attention (end)
 
-\subsection{Latent Variable Mixture Model} % (fold)
-\label{sub:latent_variable_mixture_model}
 
-% subsection latent_variable_mixture_model (end)
+\subsection{Latent Variable Mixture Model}
+\label{sub:ensemble}
+
+One way to try to get increased performance out of the \nameref{sub:decomp_attn}
+model is to ensemble multiple copies of the model with different weights. In
+particular, we explore two variants, one with an ``exact'' ensemble where every
+model is queried by the ensemble to get a marginal likelihood, and one where we
+use an inference network and an ELBO to simplify the training step.
+
+\subsubsection{Exact Ensemble Model}
+\label{subsub:exact_ensemble}
+
+For our ensemble, we will use $K$ vanilla decomposable attention models. Each
+one of these models gives us a distribution over the classes,
+\[ p(y \mid \bm{a}, \bm{b}; \theta_k).\]
+We introduce a uniform discrete latent variable which represents which model to
+listen to,
+\[ c \sim \text{Unif}(1, \ldots, K).\]
+Then, the marginal likelihood will be given by marginalizing over $c$, giving us
+\[ p(y \mid \bm{a}, \bm{b}; \theta) = \sum_{c=1}^K p(y \mid \bm{a}, \bm{b};
+\theta_c) .\]
+The $K$ models can be trained simultaneously through backprop using this
+equation for the ensemble likelihood.
+
+
+\subsubsection{Latent Variable Mixture Model} % (fold)
+\label{subsub:latent_variable_mixture_model}
+
+A problem with the above model is that training time scales linearly with $K$.
+Because we are propagating gradients through all $K$ models for every training
+example, training it takes $K$ times as long as training an individual model.
+We wish for each model $c \in \{1, \ldots, K\}$ to specialize in some of the
+problems. To this end, we create an inference network $q(c \mid y, \bm{a},
+\bm{b})$. This network follows a similar architecture to the aligned attention
+vanilla model, except it outputs weights for each of the $K$ models rather than
+the 4 labels. We sample from the distribution output by the inference network in
+order to avoid evaluating all models, using the ELBO,
+\[ \log p(y \mid \bm{a}, \bm{b}; \theta) \ge E_{c \sim q(c \mid y, \bm{a},
+\bm{b})} \log p(y \mid \bm{a}, \bm{b}; \theta_c) - \text{KL}(q(c \mid y, \bm{a},
+\bm{b})\, ||\, p(c))\]
+where the KL term can be evaluated analytically and penalizes our inference
+network diverging from a uniform choice of model. The random variable $c$ is
+discrete so we cannot employ the reparameterization trick to differentiate the
+expectation, so instead we use REINFORCE, giving us the gradient to update on
+as,
+\begin{align*}
+&= \nabla E_{c \sim q(c \mid y, \bm{a}, \bm{b})} \log p(y \mid \bm{a}, \bm{b};
+\theta_c) \\
+&= E_{c \sim q(c \mid y, \bm{a}, \bm{b})} \left[ \nabla \log p(y \mid
+\bm{a}, \bm{b}; \theta_c) + \log p(y \mid \bm{a}, \bm{b}; \theta_c) \nabla \log
+q(c \mid y, \bm{a}, \bm{b})\right]
+\end{align*}
+When testing, we can enumerate through the models as in the exact ensemble
+model.
 
 \section{Experiments}
 
@@ -123,6 +174,7 @@ model name                             &       &        & \\
 \texttt{Vanilla}                      & 0.612  & 74.44\% \\
 \texttt{Intra-Attn}  & 0.745   & 62.06\% \\
 \texttt{Exact-Ensemble}  & 0.650   & 71.65\% \\
+\texttt{VAE Ensemble} & 0.839 & 60.01\% \\
 \bottomrule
 \end{tabular}
 \caption{Performance metrics for different models}
@@ -134,8 +186,12 @@ model name                             &       &        & \\
 \bibliography{writeup}
 
 \appendix
-\section{Model implementation}
-% \lstinputlisting[caption=Sequence-to-Sequence]{models/seq2seq.py}
+\section{Model implementations}
+\lstinputlisting[caption={Decomposable Attention}]{../models/decomp_attn.py}
+
+\lstinputlisting[caption={Exact Ensemble}]{../models/ensemble.py}
+
+\lstinputlisting[caption={VAE Ensemble}]{../models/vae_ensemble.py}
 
 % This is a test for merging
 % QED
