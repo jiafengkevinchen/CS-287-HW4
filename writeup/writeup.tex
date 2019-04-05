@@ -167,7 +167,31 @@ ensemble uses 3 models, while the VAE approximation uses 4. We change these
 numbers because the VAE approximation can handle more models with less of a cost
 on training time. 
 
+For training, we use Adam with a learning rate of $1e^{-4}$ for the vanilla
+model and $1e^{-3}$ for the other models. We arrive at this optimizer through
+experimentation. We found more success with using Adam than Adagrad as
+recommended in \cite{parikh2016decomposable}, as well as in using smaller
+learning rates than suggested by that paper.
+
 \subsection{Results}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrr}
+\toprule
+{}                                     & Validation loss & Validation accuracy \\
+model name                             &       &        & \\
+\midrule
+\texttt{Vanilla}                      & 0.612  & 74.44\% \\
+\texttt{Intra-Attn}  & 0.745   & 62.06\% \\
+\texttt{Exact-Ensemble}  & 0.650   & 71.65\% \\
+% \texttt{VAE Ensemble} & 0.839 & 61.01\% \\ % old results
+\texttt{VAE Ensemble} & 0.783 & 66.01\% \\
+\bottomrule
+\end{tabular}
+\caption{Performance metrics for different models}
+\label{table:performance}
+\end{table}
 
 The performance of our trained models appears in \cref{table:performance}. These
 numbers merit some discussion. The most successful model is the vanilla. We
@@ -202,26 +226,46 @@ did not yield any obvious patterns. It is possible that the model is
 specializing in a way that is difficult to articulate, but more work would be
 required to better understand the qualitative aspects of this specialization. 
 
-\begin{landscape}
 
-\begin{table}[h]
+
+\subsection{Visualizing attention}
+
+We can also introspect on the vanilla attention model by looking at the
+attention weights the model outputs for certain examples. To do this, we
+visualize both the log attention weights as well as the softmaxes over both
+possible dimensions.
+
+For example, we can compare the sentences ``a snowboarder jumps off the snow''
+and ``A skier jumps off the snow'' in \cref{fig:skisnow}. We use different
+color-maps to emphasize the left-most graph is in log-space, whereas the other
+two are in probability space. The weights exhibit intuitively desirable
+behavior. The subjects of both sentences are being compared (snowboarder versus
+skier) as well as their actions (``jumps'' in both) and location (``snow'').
+
+We also include two other examples for reference in \cref{fig:crabs} and
+\cref{fig:skyline}.
+
+
+\begin{figure}[h]
 \centering
-\begin{tabular}{lrrr}
-\toprule
-{}                                     & Validation loss & Validation accuracy \\
-model name                             &       &        & \\
-\midrule
-\texttt{Vanilla}                      & 0.612  & 74.44\% \\
-\texttt{Intra-Attn}  & 0.745   & 62.06\% \\
-\texttt{Exact-Ensemble}  & 0.650   & 71.65\% \\
-% \texttt{VAE Ensemble} & 0.839 & 61.01\% \\ % old results
-\texttt{VAE Ensemble} & 0.783 & 66.01\% \\
-\bottomrule
-\end{tabular}
-\caption{Performance metrics for different models}
-\label{table:performance}
-\end{table}
-\end{landscape}
+\includegraphics[width=\textwidth]{figs/ski-snow.pdf}
+\caption{Attention weights for ski/snow sentences.}
+\label{fig:skisnow}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/crabs.pdf}
+\caption{Attention weights for crabs example}
+\label{fig:crabs}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{figs/skyline.pdf}
+\caption{Attention weights for skyline example}
+\label{fig:skyline}
+\end{figure}
 
 \bibliographystyle{apalike}
 \bibliography{writeup}
