@@ -19,7 +19,8 @@ class VAEEnsemble(nnn.Module):
         self.q = q
         self.ce_loss = nnn.CrossEntropyLoss(reduction='none').spec('classes')
         self.num_classes = num_classes
-        self.unif = Categorical(torch.ones(len(models)))
+        self.unif = Categorical(torch.ones(len(models), 
+                                           device=next(self.parameters()).device))
     
     def forward(self, hypothesis, premise, y=None):
         if self.training:
