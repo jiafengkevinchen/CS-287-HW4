@@ -1,5 +1,5 @@
 import torch
-from torch.distributions import Categorical
+from torch.distributions import Categorical, kl_divergence
 
 from namedtensor import NamedTensor
 from namedtensor import ntorch
