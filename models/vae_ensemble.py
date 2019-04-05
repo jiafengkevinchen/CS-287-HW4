@@ -1,3 +1,4 @@
+import torch
 from torch.distributions import Categorical
 
 from namedtensor import NamedTensor
